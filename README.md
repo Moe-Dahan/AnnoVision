@@ -23,4 +23,4 @@ ANNOVISION is a tool built using Python's Tkinter library that facilitates the a
 - Control+d to delete the last annoted data created.
 
 # Demo Video
-https://1drv.ms/v/s!Aje-1pOulNbmg4oCVAJk6MVSer9PAw
+[https://1drv.ms/v/s!Aje-1pOulNbmg4oCVAJk6MVSer9PAw](https://vimeo.com/917277530?share=copy)https://vimeo.com/917277530?share=copy

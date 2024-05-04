@@ -7,107 +7,123 @@ from tkinter import messagebox
 from PIL import Image
 
 data = {}
-annotationData = {}
+annotation_data = {}
 
 class Annot:
-    
-    def __init__(self,workingCanvas, clickedImage, file_path, the_image) -> None:
-        self.workingCanvas = workingCanvas
-        self.clickedImage = clickedImage
-        self.file_path = file_path
+    def __init__(self, window, canvas_frame, clicked_image, final_file_path, the_image) -> None:
+        self.window = window
+        self.canvas_frame = canvas_frame
+        self.clicked_image = clicked_image
+        self.final_file_path = final_file_path
         self.the_image = the_image
 
         self.annotations = []
         self.rectangle = None
+        self.button_pressed = False
         self.start_x = None
         self.start_y = None
+        self.h_line = None
+        self.v_line = None
 
         # keybindings for shortcuts
-        self.clickedImage.focus_set()
-        self.clickedImage.bind("<ButtonPress-1>", self.on_button_press)
-        self.clickedImage.bind("<B1-Motion>", self.on_button_move)
-        self.clickedImage.bind("<ButtonRelease-1>", self.on_button_release) 
-        self.clickedImage.bind("<Control-s>", self.savingImages) 
-        self.clickedImage.bind("<Control-d>",self.delete_last_rectangle)
+        self.clicked_image.focus_set()
+        self.clicked_image.bind("<ButtonPress-1>", self.on_button_press)
+        self.clicked_image.bind("<B1-Motion>", self.on_button_move)
+        self.clicked_image.bind("<ButtonRelease-1>", self.on_button_release) 
+        self.clicked_image.bind("<Control-s>", self.saving_images) 
+        self.clicked_image.bind("<Control-d>", self.delete_last_rectangle)
 
     def delete_last_rectangle(self, event=None):
-        self.clickedImage.delete(self.rectangle)
-        self.AnnoteWindow.destroy()
+        self.clicked_image.delete(self.rectangle)
+        self.annote_window.destroy()
 
     def on_button_press(self, event):
         self.start_x = event.x
         self.start_y = event.y
-        self.rectangle = self.clickedImage.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline="red", width=1)
+        self.button_pressed = True
+        if self.button_pressed:
+            self.h_line = self.clicked_image.create_line(0, event.y, self.clicked_image.winfo_width(), event.y)
+            self.clicked_image.itemconfig(self.h_line, fill="orange")
+            self.v_line = self.clicked_image.create_line(event.x, 0, event.x, self.clicked_image.winfo_height())
+            self.clicked_image.itemconfig(self.v_line, fill="orange")
+            self.rectangle = self.clicked_image.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline="red", width=1)
+        
 
     def on_button_move(self, event):
-        self.clickedImage.coords(self.rectangle, self.start_x, self.start_y, event.x, event.y)
+        if self.button_pressed:
+            self.clicked_image.coords(self.h_line, 0, event.y, self.clicked_image.winfo_width(), event.y)
+            self.clicked_image.itemconfig(self.h_line, fill="Yellow")
+            self.clicked_image.coords(self.v_line, event.x, 0, event.x, self.clicked_image.winfo_height())
+            self.clicked_image.itemconfig(self.v_line, fill="Yellow")
+            self.clicked_image.coords(self.rectangle, self.start_x, self.start_y, event.x, event.y)
 
     def on_button_release(self, event):
+        self.button_pressed = False
+        self.clicked_image.delete(self.h_line)
+        self.clicked_image.delete(self.v_line)
 
-        if self.clickedImage.winfo_exists():
-            self.AnnoteWindow = tk.Toplevel(self.workingCanvas)
-            self.AnnoteWindow.geometry("400x300")
-            self.AnnoteWindow.title("ANNOVISION")
-            self.AnnoteWindow.iconbitmap("icons/4023873-brain-learning-machine-machine-learning-ml_112855.ico")
+        if self.clicked_image.winfo_exists():
+            self.annote_window = tk.Toplevel(self.window)
+            self.annote_window.geometry("400x300")
+            self.annote_window.title("ANNOVISION")
+            self.annote_window.iconbitmap("icons/4023873-brain-learning-machine-machine-learning-ml_112855.ico")
             ''' taking data frame for class and color '''
-            self.dataTakingFrame = tk.Frame(self.AnnoteWindow, borderwidth=1, relief="raised")
+            self.data_taking_frame = tk.Frame(self.annote_window, borderwidth=1, relief="raised")
 
-            self.dataName = tk.Label(self.dataTakingFrame, text="Data Name")
-            self.dataName.grid(row=0, column=0, sticky="nw",  padx=5, pady=5)
+            self.data_name = tk.Label(self.data_taking_frame, text="Data Name")
+            self.data_name.grid(row=0, column=0, sticky="nw",  padx=5, pady=5)
 
-            self.dataNameEntry = tk.StringVar()
-            self.dataEntry = tk.Entry(self.dataTakingFrame, textvariable=self.dataNameEntry)
-            self.dataEntry.grid(row=0, column=1, sticky="nw", padx=5, pady=5)
+            self.data_name_entry = tk.StringVar()
+            self.data_entry = tk.Entry(self.data_taking_frame, textvariable=self.data_name_entry)
+            self.data_entry.grid(row=0, column=1, sticky="nw", padx=5, pady=5)
 
-            self.addButton = tk.Button(self.dataTakingFrame, text="Class Color", command=lambda: self.chooseColor(event=event))
-            self.addButton.grid(row=0, column=2, sticky="nw", padx=5, pady=5)
+            self.add_button = tk.Button(self.data_taking_frame, text="Class Color", command=lambda: self.choose_color(event=event))
+            self.add_button.grid(row=0, column=2, sticky="nw", padx=5, pady=5)
 
-            self.dataTakingFrame.grid(row=0, column=0, sticky="nw", padx=5, pady=5)
+            self.data_taking_frame.grid(row=0, column=0, sticky="nw", padx=5, pady=5)
             ''' placing the saved classes frame '''
-            self.objectDataFrame = tk.Frame(self.AnnoteWindow, borderwidth=1, relief="sunken")
+            self.object_data_frame = tk.Frame(self.annote_window, borderwidth=1, relief="sunken")
 
-            for objectDetectingData in data.keys():
-                self.dataButton = tk.Button(self.objectDataFrame, text=objectDetectingData, command=lambda object=objectDetectingData: self.addData(object=object, event=event), width=10)
-                self.dataButton.pack()
-            self.objectDataFrame.grid(row=1, column=0, sticky="nw", padx=5, pady=5)
+            for object_detecting_data in data.keys():
+                self.data_button = tk.Button(self.object_data_frame, text=object_detecting_data, command=lambda object=object_detecting_data: self.add_data(object=object, event=event), width=10)
+                self.data_button.pack()
+            self.object_data_frame.grid(row=1, column=0, sticky="nw", padx=5, pady=5)
 
-            self.AnnoteWindow.mainloop()
-        else:
-            self.workingImageWindow.destroy()
-
-    def chooseColor(self, event):
+            self.annote_window.mainloop()
+        
+    def choose_color(self, event):
         color = askcolor()
-        chosenData = self.dataNameEntry.get()
-        data.update({chosenData : color[1]})
-        self.clickedImage.create_rectangle(self.start_x, self.start_y, event.x, event.y, outline=color[1], width=1)
+        chosen_data = self.data_name_entry.get()
+        data.update({chosen_data : color[1]})
+        self.clicked_image.create_rectangle(self.start_x, self.start_y, event.x, event.y, outline=color[1], width=1)
         
         keys_list = list(data.keys())
-        class_index = keys_list.index(chosenData)
+        class_index = keys_list.index(chosen_data)
         x_center, y_center, width, height = self.convert_to_yolo_format(self.start_x, self.start_y, event.x, event.y, int(1920 - 210), int(1080 - 100))
         annotation = f"{class_index} {x_center} {y_center} {width} {height}"
         
         self.annotations.append(annotation)
 
-        annotationData.update({class_index: chosenData})
-        self.AnnoteWindow.destroy()
-
-    def addData(self, event, object):
+        annotation_data.update({class_index: chosen_data})
+        self.annote_window.destroy()
+    
+    def add_data(self, event, object):
         keys_list = list(data.keys())
         class_index = keys_list.index(object)
         if object in keys_list:
             for key, value in data.items():
                 if value == object:
                     key_index = key
-                    annotationData.update({key_index : object})
+                    annotation_data.update({key_index : object})
                     break
 
-        objectColor = self.hex_to_rgb(data[object])  # Convert hex string to RGB tuple
-        color = '#{:02x}{:02x}{:02x}'.format(*objectColor)
-        self.clickedImage.create_rectangle(self.start_x, self.start_y, event.x, event.y, outline=color, width=1)
+        object_color = self.hex_to_rgb(data[object])
+        color = '#{:02x}{:02x}{:02x}'.format(*object_color)
+        self.clicked_image.create_rectangle(self.start_x, self.start_y, event.x, event.y, outline=color, width=1)
         x_center, y_center, width, height = self.convert_to_yolo_format(self.start_x, self.start_y, event.x, event.y, int(1920 - 210), int(1080 - 100))
         annotation = f"{class_index} {x_center} {y_center} {width} {height}"
         self.annotations.append(annotation)
-        self.AnnoteWindow.destroy()
+        self.annote_window.destroy()
 
     def hex_to_rgb(self, hex_color):
         hex_color = hex_color.lstrip('#')
@@ -122,7 +138,7 @@ class Annot:
         height = min(height, 1.0)
         return x_center, y_center, width, height
     
-    def savingImages(self, event):
+    def saving_images(self, event):
         if os.path.exists("count.txt"):
             with open("count.txt", "r") as file:
                 count = int(file.read().strip())
@@ -134,49 +150,41 @@ class Annot:
             file.write(str(count))
 
         created_folder = os.makedirs(f"your_yolov8_dataset/images{count}", exist_ok=True)
-        source_image_path = self.file_path
+        source_image_path = self.final_file_path
         destination_folder = f"your_yolov8_dataset/images{count}"
         new_image_filename = f"images{count}.jpg"
         
-        # Copy the image to the destination folder
         shutil.copy(source_image_path, destination_folder)
 
-        # Rename the copied image to the new filename
         os.rename(os.path.join(destination_folder, os.path.basename(source_image_path)), os.path.join(destination_folder, new_image_filename))
 
-        # Write annotations to a text file
-        with open(f"{destination_folder}/images{count}.txt", 'w') as fileOutput:
+        with open(f"{destination_folder}/images{count}.txt", 'w') as file_output:
             for line in self.annotations:
-                fileOutput.write(line + '\n')
+                file_output.write(line + '\n')
         messagebox.showinfo(title="Saved Data", message='Saved Data Successfully!')
         self.annotations.clear()
-        
+
 def extract_yaml():
-    root_folder = "your_yolov8_dataset"
-    class_names = list(annotationData.keys())
+        root_folder = "your_yolov8_dataset"
+        class_names = list(annotation_data.keys())
 
-    folders = [name for name in os.listdir(root_folder) if os.path.isdir(os.path.join(root_folder, name))]
-    total_folders = len(folders)
-    half_folders = total_folders // 2
-    for index, folder_name in enumerate(folders):
-        source_folder = os.path.join(root_folder, folder_name)
-        destination_folder = "train" if index < half_folders else "val"
-        shutil.move(source_folder, os.path.join(root_folder, destination_folder, folder_name))
+        folders = [name for name in os.listdir(root_folder) if os.path.isdir(os.path.join(root_folder, name))]
+        total_folders = len(folders)
+        half_folders = total_folders // 2
+        for index, folder_name in enumerate(folders):
+            source_folder = os.path.join(root_folder, folder_name)
+            destination_folder = "train" if index < half_folders else "val"
+            shutil.move(source_folder, os.path.join(root_folder, destination_folder, folder_name))
 
-    yaml_data = {
-        'path': root_folder,
-        'train': f"{os.getcwd()}/your_yolov8_dataset/train",
-        'val': f"{os.getcwd()}/your_yolov8_dataset/val",
-        'names': annotationData
-    }
-        
-    yaml_file = f"{root_folder}/dataset.yaml"
-    with open(yaml_file, 'w') as f:
-        yaml.dump(yaml_data, f)
-    messagebox.showinfo(title="Extracted Successfully", 
-    message='Model Extracted successfully to your_yolov8_dataset!')
-
-
-if __name__ == '__main__':
-    print("You Must Run main.py")
-
+        yaml_data = {
+            'path': root_folder,
+            'train': f"{os.getcwd()}/your_yolov8_dataset/train",
+            'val': f"{os.getcwd()}/your_yolov8_dataset/val",
+            'names': annotation_data
+        }
+            
+        yaml_file = f"{root_folder}/dataset.yaml"
+        with open(yaml_file, 'w') as f:
+            yaml.dump(yaml_data, f)
+        messagebox.showinfo(title="Extracted Successfully", 
+        message='Model Extracted successfully to your_yolov8_dataset!')
